@@ -8,6 +8,8 @@ WORKDIR /usr/scheduler
 # Copy files
 COPY crontab.* ./
 COPY start.sh .
+COPY jobs/*.* ./jobs/
+
 
 # Fix line endings && execute permissions
 RUN dos2unix crontab.* \
