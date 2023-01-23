@@ -1,26 +1,18 @@
-# BUILD-USING:        docker build -t test-cron .
-# RUN-USING docker run --detach=true --volumes-from t-logs --name t-cron test-cron
+FROM alpine:3.15
 
-FROM debian:wheezy
-#
-# Set correct environment variables.
-ENV HOME /root
-ENV TEST_ENV test-value
+# Install required packages
+RUN apk add --update --no-cache bash dos2unix
 
-RUN apt-get update && apt-get install -y software-properties-common python-software-properties && apt-get update
+WORKDIR /usr/scheduler
 
-# Install Python Setuptools
-RUN apt-get install -y python cron
+# Copy files
+COPY crontab.* ./
+COPY start.sh .
 
-RUN apt-get purge -y python-software-properties software-properties-common && apt-get clean -y && apt-get autoclean -y && apt-get autoremove -y && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+# Fix line endings && execute permissions
+RUN dos2unix crontab.* \
+    && \
+    find . -type f -iname "*.sh" -exec chmod +x {} \;
 
-ADD cron-python /etc/cron.d/
-ADD test.py /
-ADD run-cron.py /
-
-RUN chmod a+x test.py run-cron.py
-
-# Set the time zone to the local time zone
-RUN echo "America/New_York" > /etc/timezone && dpkg-reconfigure --frontend noninteractive tzdata
-
-CMD ["/run-cron.py"]
+# Run cron on container startup
+CMD ["./start.sh"]
